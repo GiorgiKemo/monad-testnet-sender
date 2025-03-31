@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+    <title>Monad Testnet Sender</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" type="application/javascript"></script>
+</head>
+<body>
+    <header>
+        <div class="nav-container">
+            <a href="index.html"><img src="imgs/monadlogo.png" alt="Logo" class="logo"></a>
+            <div class="dark-mode-toggle">
+                <label class="switch">
+                    <input type="checkbox" id="darkModeToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="wallet-container">
+                <button class="nav-button">Connect Wallet</button>
+                <div class="dropdown-menu">
+                    <button class="disconnect-button">Disconnect</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div class="content-container">
+            <h1>Send MON to random wallets</h1>
+            <p>Click the button below to send 0.00001 - 0.0002 MON to a random wallet</p>
+            <p><a href="https://testnet.monad.xyz" target="_blank">Get testnet MON tokens here</a></p>
+            <button class="action-button">Send</button>
+            <p class="disclaimer">Note: Tokens are sent to randomly generated testnet addresses.</p>
+            <div id="error-display" style="color: red; text-align: center; margin-top: 10px;"></div>
+            <p id="txCounter">Total Transactions: 0</p>
+            <ul class="tx-history"></ul>
+            <div id="networkPrompt" class="network-prompt">
+                <p>You are not on the Monad Testnet. Please switch to continue.</p>
+                <button id="switchNetworkButton">Switch to Monad Testnet</button>
+            </div>
+        </div>
+    </main>
+    <div class="wallet-modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Connect Your Wallet</h2>
+            <button class="wallet-option" data-wallet="metamask">MetaMask</button>
+            <button class="wallet-option" data-wallet="walletconnect">WalletConnect</button>
+            <button class="close-modal">Close</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
