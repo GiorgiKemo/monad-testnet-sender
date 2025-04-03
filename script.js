@@ -1,16 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const connectButton = document.querySelector('.nav-button');
-    const walletModal = document.querySelector('.wallet-modal');
-    const closeModalButton = document.querySelector('.close-modal');
+    const connectButton = document.getElementById('connectWalletBtn');
+    const disconnectButton = document.getElementById('disconnectWalletBtn');
+    const walletDropdown = document.getElementById('walletDropdown');
+    const walletModal = document.getElementById('walletModal');
+    const closeModalButton = document.getElementById('closeWalletModal');
     const walletOptions = document.querySelectorAll('.wallet-option');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
-    const disconnectButton = document.querySelector('.disconnect-button');
-    const sendButton = document.querySelector('.action-button');
-    const txHistoryContainer = document.querySelector('.tx-history');
+    const sendButton = document.getElementById('sendButton');
+    const txHistory = document.getElementById('txHistory');
     const networkPrompt = document.getElementById('networkPrompt');
     const switchNetworkButton = document.getElementById('switchNetworkButton');
     const txCounterElement = document.getElementById('txCounter');
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const errorDisplay = document.getElementById('errorDisplay');
+    const walletContainer = document.querySelector('.wallet-container');
 
     let txCount = 0;
 
@@ -23,40 +25,61 @@ document.addEventListener('DOMContentLoaded', function() {
         blockExplorerUrls: ['https://monad-testnet.socialscan.io']
     };
 
+    // Initialize dark mode from localStorage
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        darkModeToggle.checked = true;
+    }
+
     function showError(message) {
-        document.getElementById('error-display').textContent = message;
+        if (!message) {
+            errorDisplay.innerHTML = '';
+            return;
+        }
+        
+        errorDisplay.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        setTimeout(() => {
+            errorDisplay.innerHTML = '';
+        }, 5000);
     }
 
     function openModal() {
-        walletModal.style.display = 'flex';
+        walletModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
     }
 
-    function toggleDropdown() {
-        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+    function closeModal() {
+        walletModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function closeNetworkPrompt() {
+        networkPrompt.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    function updateButton(address) {
+        connectButton.innerHTML = `
+            <i class="fas fa-wallet"></i>
+            <span>${address.slice(0, 6)}...${address.slice(-4)}</span>
+        `;
+        walletContainer.classList.add('connected');
+        localStorage.setItem('connectedWallet', address);
+        console.log("Button updated with address:", address);
     }
 
     function disconnectWallet() {
-        connectButton.textContent = 'Connect Wallet';
-        dropdownMenu.style.display = 'none';
-        connectButton.removeEventListener('click', toggleDropdown);
-        connectButton.addEventListener('click', openModal);
-        console.log("Wallet disconnected.");
-    }
-
-    connectButton.addEventListener('click', openModal);
-    disconnectButton.addEventListener('click', disconnectWallet);
-
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.wallet-container')) {
-            dropdownMenu.style.display = 'none';
+        connectButton.innerHTML = '<i class="fas fa-wallet"></i><span>Connect Wallet</span>';
+        walletContainer.classList.remove('connected');
+        localStorage.removeItem('connectedWallet');
+        if (window.ethereum) {
+            window.ethereum.removeAllListeners('accountsChanged');
         }
-    });
-
-    function updateButton(address) {
-        connectButton.textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-        connectButton.removeEventListener('click', openModal);
-        connectButton.addEventListener('click', toggleDropdown);
-        console.log("Button updated with address:", address);
     }
 
     async function connectMetaMask() {
@@ -68,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             if (accounts.length > 0) {
                 updateButton(accounts[0]);
+                closeModal();
             }
         } catch (error) {
             showError(error.code === 4001 ? "Connection rejected by user." : `Connection failed: ${error.message}`);
@@ -94,48 +118,46 @@ document.addEventListener('DOMContentLoaded', function() {
             if (accounts.length > 0) {
                 updateButton(accounts[0]);
             } else {
-                disconnectWallet();
+                connectButton.innerHTML = '<i class="fas fa-wallet"></i><span>Connect Wallet</span>';
+                walletContainer.classList.remove('connected');
+                localStorage.removeItem('connectedWallet');
             }
         });
-        window.ethereum.on('disconnect', disconnectWallet);
     }
 
     checkConnection();
 
-    closeModalButton.addEventListener('click', function() {
-        walletModal.style.display = 'none';
-    });
+    // Event Listeners
+    connectButton.addEventListener('click', openModal);
+    closeModalButton.addEventListener('click', closeModal);
+    disconnectButton.addEventListener('click', disconnectWallet);
 
+    // Only keep MetaMask option
     walletOptions.forEach(option => {
-        option.addEventListener('click', async () => {
-            const walletType = option.getAttribute('data-wallet');
-            if (walletType === 'metamask') {
-                await connectMetaMask();
-            } else if (walletType === 'walletconnect') {
-                showError('WalletConnect not implemented yet. Use MetaMask.');
-            }
-            walletModal.style.display = 'none';
-        });
+        if (option.getAttribute('data-wallet') === 'metamask') {
+            option.addEventListener('click', connectMetaMask);
+        }
     });
 
     darkModeToggle.addEventListener('change', function() {
         document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', this.checked);
     });
 
     sendButton.addEventListener('click', async () => {
-        if (!connectButton.textContent.startsWith("Connected:")) {
+        if (!connectButton.textContent.includes("...")) {
             showError("Please connect your wallet first.");
             return;
         }
 
         try {
-            showError(''); // Clear previous error before attempting new transaction
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
             if (network.chainId !== MONAD_TESTNET_CHAIN_ID) {
                 networkPrompt.classList.add('show');
+                document.body.style.overflow = 'hidden';
             } else {
-                networkPrompt.classList.remove('show');
+                closeNetworkPrompt();
                 await sendTransaction();
             }
         } catch (error) {
@@ -151,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 params: [{ chainId: MONAD_TESTNET.chainId }],
             });
             console.log("Switched to Monad Testnet.");
-            networkPrompt.classList.remove('show');
+            closeNetworkPrompt();
             await sendTransaction();
         } catch (switchError) {
             if (switchError.code === 4902) {
@@ -164,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     params: [{ chainId: MONAD_TESTNET.chainId }],
                 });
                 console.log("Monad Testnet added and switched.");
-                networkPrompt.classList.remove('show');
+                closeNetworkPrompt();
                 await sendTransaction();
             } else {
                 console.error("Failed to switch network:", switchError);
@@ -178,33 +200,57 @@ document.addEventListener('DOMContentLoaded', function() {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             const balance = await provider.getBalance(await signer.getAddress());
-            const minAmount = 0.00001;
-            const maxAmount = 0.0002;
-            const randomAmount = minAmount + Math.random() * (maxAmount - minAmount);
-            const amount = ethers.utils.parseEther(randomAmount.toFixed(18));
-            if (balance.lt(amount)) {
-                showError('Insufficient balance for this transaction.');
+            const minAmount = ethers.utils.parseEther("0.00001");
+            const maxAmount = ethers.utils.parseEther("0.0002");
+            const randomAmount = ethers.utils.parseEther(
+                (Math.random() * (0.0002 - 0.00001) + 0.00001).toFixed(5)
+            );
+
+            if (balance.lt(randomAmount)) {
+                showError("Insufficient balance for transaction");
                 return;
             }
-            const randomWallet = ethers.Wallet.createRandom();
-            const recipient = randomWallet.address;
-            const tx = await signer.sendTransaction({
-                to: recipient,
-                value: amount
-            });
-            console.log(`Transaction sent: ${ethers.utils.formatEther(amount)} MON`, tx.hash);
-            await tx.wait();
-            console.log("Transaction confirmed.");
 
-            const txEntry = document.createElement('li');
-            txEntry.innerHTML = `Sent ${ethers.utils.formatEther(amount)} MON: <a href="https://monad-testnet.socialscan.io/tx/${tx.hash}" target="_blank">${tx.hash}</a>`;
-            txHistoryContainer.appendChild(txEntry);
+            const randomAddress = ethers.Wallet.createRandom().address;
+            const tx = await signer.sendTransaction({
+                to: randomAddress,
+                value: randomAmount
+            });
 
             txCount++;
-            txCounterElement.textContent = `Total Transactions: ${txCount}`;
+            txCounterElement.textContent = txCount;
+
+            const txElement = document.createElement('div');
+            txElement.className = 'tx-entry';
+            txElement.innerHTML = `
+                <div class="tx-details">
+                    <span class="tx-amount">${ethers.utils.formatEther(randomAmount)} MON</span>
+                    <a href="https://monad-testnet.socialscan.io/tx/${tx.hash}" target="_blank" class="tx-link">
+                        View Transaction
+                    </a>
+                </div>
+            `;
+            txHistory.insertBefore(txElement, txHistory.firstChild);
+
+            console.log("Transaction sent:", tx.hash);
         } catch (error) {
             console.error("Transaction error:", error);
             showError("Transaction failed: " + error.message);
         }
     }
+
+    // Removed JavaScript hover listeners; handled by CSS now
+
+    // Add click event listeners to close modals on outside click
+    networkPrompt.addEventListener('click', function(event) {
+        if (event.target === networkPrompt) {
+            closeNetworkPrompt();
+        }
+    });
+
+    walletModal.addEventListener('click', function(event) {
+        if (event.target === walletModal) {
+            closeModal();
+        }
+    });
 });
