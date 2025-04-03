@@ -3,52 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
     <title>Monad Testnet Sender</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" type="application/javascript"></script>
 </head>
 <body>
-    <header>
-        <div class="nav-container">
-            <a href="index.html"><img src="imgs/monadlogo.png" alt="Logo" class="logo"></a>
-            <div class="dark-mode-toggle">
-                <label class="switch">
-                    <input type="checkbox" id="darkModeToggle">
-                    <span class="slider"></span>
-                </label>
+    <div class="app-container">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-content">
+                <div class="logo-section">
+                    <a href="/" class="logo-link">
+                        <img src="imgs/monadlogo.png" alt="Monad Logo" class="logo-img">
+                        <span class="logo-text">Monad Sender</span>
+                    </a>
+                </div>
+                <div class="nav-actions">
+                    <div class="theme-toggle">
+                        <input type="checkbox" id="darkModeToggle">
+                        <label for="darkModeToggle" class="toggle-label">
+                            <i class="fas fa-sun"></i>
+                            <i class="fas fa-moon"></i>
+                            <span class="toggle-ball"></span>
+                        </label>
+                    </div>
+                    <div class="wallet-container">
+                        <button class="connect-wallet-btn" id="connectWalletBtn">
+                            <i class="fas fa-wallet"></i>
+                            <span>Connect Wallet</span>
+                        </button>
+                        <div class="wallet-dropdown" id="walletDropdown">
+                            <button class="disconnect-btn" id="disconnectWalletBtn">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Disconnect</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="wallet-container">
-                <button class="nav-button">Connect Wallet</button>
-                <div class="dropdown-menu">
-                    <button class="disconnect-button">Disconnect</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="hero-section">
+                <h1>Monad Testnet Sender</h1>
+                <p class="subtitle">Experience the power of Monad's testnet network</p>
+            </div>
+
+            <div class="card-container">
+                <!-- Info Card -->
+                <div class="info-card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h2>How it Works</h2>
+                    </div>
+                    <div class="card-content">
+                        <p>Send 0.00001 - 0.0002 MON to random testnet addresses</p>
+                        <div class="token-link">
+                            <i class="fas fa-coins"></i>
+                            <a href="https://testnet.monad.xyz" target="_blank">Get testnet MON tokens</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Card -->
+                <div class="action-card">
+                    <button class="send-button" id="sendButton">
+                        <div class="button-content">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Send MON</span>
+                        </div>
+                    </button>
+                    <p class="disclaimer">
+                        <i class="fas fa-shield-alt"></i>
+                        Tokens are sent to randomly generated testnet addresses
+                    </p>
+                </div>
+
+                <!-- Stats Card with Transactions -->
+                <div class="stats-card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h2>Transaction History</h2>
+                    </div>
+                    <div class="stats-content">
+                        <div class="stat-item">
+                            <i class="fas fa-exchange-alt"></i>
+                            <div class="stat-info">
+                                <span class="stat-label">Total Transactions: <span class="stat-value" id="txCounter">0</span></span>
+                            </div>
+                        </div>
+                        <div class="tx-history" id="txHistory"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Network Prompt Modal -->
+        <div class="modal" id="networkPrompt">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h2>Network Switch Required</h2>
+                    <p>Please switch to Monad Testnet to continue</p>
+                    <button class="primary-button" id="switchNetworkButton">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Switch Network</span>
+                    </button>
                 </div>
             </div>
         </div>
-    </header>
-    <main>
-        <div class="content-container">
-            <h1>Send MON to random wallets</h1>
-            <p>Click the button below to send 0.00001 - 0.0002 MON to a random wallet</p>
-            <p><a href="https://testnet.monad.xyz" target="_blank">Get testnet MON tokens here</a></p>
-            <button class="action-button">Send</button>
-            <p class="disclaimer">Note: Tokens are sent to randomly generated testnet addresses.</p>
-            <div id="error-display" style="color: red; text-align: center; margin-top: 10px;"></div>
-            <p id="txCounter">Total Transactions: 0</p>
-            <ul class="tx-history"></ul>
-            <div id="networkPrompt" class="network-prompt">
-                <p>You are not on the Monad Testnet. Please switch to continue.</p>
-                <button id="switchNetworkButton">Switch to Monad Testnet</button>
+
+        <!-- Wallet Connect Modal -->
+        <div class="modal" id="walletModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Connect Wallet</h3>
+                    <button class="close-modal" id="closeWalletModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="wallet-options">
+                        <button class="wallet-option" data-wallet="metamask">
+                            <i class="fab fa-ethereum"></i>
+                            <span>MetaMask</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </main>
-    <div class="wallet-modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Connect Your Wallet</h2>
-            <button class="wallet-option" data-wallet="metamask">MetaMask</button>
-            <button class="wallet-option" data-wallet="walletconnect">WalletConnect</button>
-            <button class="close-modal">Close</button>
-        </div>
+
+        <!-- Error Display -->
+        <div class="error-container" id="errorDisplay"></div>
     </div>
     <script src="script.js"></script>
 </body>
